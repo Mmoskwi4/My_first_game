@@ -1,7 +1,6 @@
 import pygame.font
 from pygame.sprite import Group
 from ship import Ship
-import sys
 
 class Scoreboard():
     """Клас для вывода игровой информации"""
@@ -59,9 +58,6 @@ class Scoreboard():
             self.prep_high_score()
             with open('Scoreboard.txt', 'w') as file_object:
                 file_object.write(str(self.stats.high_score))
-
-
-
 
     def prep_level(self):
         """Преобразует уровень в графическое изображение"""

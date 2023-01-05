@@ -11,8 +11,9 @@ from bullet import Bullet
 from alien import Alien
 from donat import Donat
 from random import randint
+from upgrades import Upgrade
 
-class AlienInvasion:
+class AlienInvasion():
     """Класс для управления ресурсами и поведением игры"""
 
     def __init__(self):
@@ -29,11 +30,15 @@ class AlienInvasion:
 
         # Создание игровых моделей
         self.ship = Ship(self)
+        self.upgrade = Upgrade(self)
         self.bullet = Bullet(self)
         self.alien = Alien(self)
+
         self.bullets = pygame.sprite.Group()
         self.aliens = pygame.sprite.Group()
         self.donats = pygame.sprite.Group()
+        self.upgrades = pygame.sprite.Group()
+
         # Создание флота и неба
         self._create_fleet()
         self._donat_sky()
@@ -51,6 +56,10 @@ class AlienInvasion:
                 self.bullets.update()
                 self._update_bullets()
                 self._update_aliens()
+                # Отрисовка улучшений
+                self.create_upgrade()
+                self.upgrade.update()
+                self._update_upgrades()
 
             self._update_screen()
 
@@ -148,6 +157,7 @@ class AlienInvasion:
             self.sb.prep_score()
             self.sb.prep_ships()
 
+
             # Отчистка пришельцев и снарядов
             self.aliens.empty()
             self.bullets.empty()
@@ -177,7 +187,7 @@ class AlienInvasion:
     def _check_bullet_alien_collisions(self):
         """Обработка колизий снарядов с пришельцами"""
         # Удаление снарядов и пришельцев, участвующих в колизиях
-        collisions = pygame.sprite.groupcollide(self.bullets, self.aliens, True, True)
+        collisions = pygame.sprite.groupcollide(self.bullets, self.aliens, False, True)
 
         if collisions:
             for aliens in collisions.values():
@@ -190,6 +200,8 @@ class AlienInvasion:
             self.bullets.empty()
             self._create_fleet()
             self.settings.increase_speed()
+            self.stats.level += 1
+            self.sb.prep_level()
 
     def _create_fleet(self):
         """Создает флот пришельцев"""
@@ -300,16 +312,45 @@ class AlienInvasion:
             if donat.rect.y < self.settings.screen_height:
                 self.donats.add(donat)
 
+    def create_upgrade(self):
+        """Создает улучшение на экране"""
+
+
+    def _update_upgrades(self):
+        """Обновляет позици на экране"""
+        for upgrade in self.upgrades.copy():
+            if upgrade.rect.bottom >= self.upgrade.screen_rect.bottom:
+                self.settings.upgrade_drop_speed = 0
+
+        self._check_ship_upgrade_collision()
+
+    def _check_ship_upgrade_collision(self):
+        """Проверяет колизию корабля с улучшением"""
+        collections = pygame.sprite.spritecollide(self.ship, self.upgrades, True)
+        if collections:
+            self.upgrade.grade_1()
+
     def _update_screen(self):
         """Отображает изображение на экране и отображает новый экран"""
+        # Отрисовка экрана
         self.screen.fill(self.settings.bg_color)
+        # Отрисовка снарядов
         for bullet in self.bullets.sprites():
             bullet.draw_bullet()
-        self.ship.blitme()
+        # Отрисовка неба
         self.donats.draw(self.screen)
-        self.aliens.draw(self.screen)
         # Вывод информации о счете
         self.sb.show_score()
+
+        for upgrade in self.upgrades.sprites():
+            upgrade.blitme()
+
+        # Отрисовка корабля
+        self.ship.blitme()
+        # Отрисовка пришельцев
+        self.aliens.draw(self.screen)
+
+
         # Кнопка Play отображается в том случае, если игра не активна
         if not self.stats.game_active:
             self.screen.fill(self.settings.stop_bg_color)
@@ -317,8 +358,6 @@ class AlienInvasion:
             self.play_button.draw_button()
             self.dif.draw_button()
             self.dif.show_score()
-
-
 
         pygame.display.flip()
 
